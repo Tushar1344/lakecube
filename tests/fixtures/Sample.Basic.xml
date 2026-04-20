@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Synthetic Essbase outline export modeled on Oracle's Sample.Basic cube.
+  Structure follows the schema produced by MaxL `export outline` on
+  Essbase 11.1.2.x / 19.3 / 21c. Used to exercise the Lakecube outline
+  importer — not a byte-exact copy of any Oracle export.
+-->
+<application name="Sample" csversion="4.0" product="ESSBASE_PRODUCT"
+             redeployType="tree" dimCount="5">
+  <AliasTableList>
+    <AliasTable name="Default" isActive="true" />
+    <AliasTable name="Long" isActive="false" />
+  </AliasTableList>
+
+  <Dimension name="Year" type="time" isTimeGeneration="true">
+    <Member name="Year" consoltype="+" datastorage="labelOnly">
+      <Member name="Qtr1" consoltype="+" datastorage="labelOnly">
+        <Member name="Jan" consoltype="+" datastorage="storeData" />
+        <Member name="Feb" consoltype="+" datastorage="storeData" />
+        <Member name="Mar" consoltype="+" datastorage="storeData" />
+      </Member>
+      <Member name="Qtr2" consoltype="+" datastorage="labelOnly">
+        <Member name="Apr" consoltype="+" datastorage="storeData" />
+        <Member name="May" consoltype="+" datastorage="storeData" />
+        <Member name="Jun" consoltype="+" datastorage="storeData" />
+      </Member>
+      <Member name="Qtr3" consoltype="+" datastorage="labelOnly">
+        <Member name="Jul" consoltype="+" datastorage="storeData" />
+        <Member name="Aug" consoltype="+" datastorage="storeData" />
+        <Member name="Sep" consoltype="+" datastorage="storeData" />
+      </Member>
+      <Member name="Qtr4" consoltype="+" datastorage="labelOnly">
+        <Member name="Oct" consoltype="+" datastorage="storeData" />
+        <Member name="Nov" consoltype="+" datastorage="storeData" />
+        <Member name="Dec" consoltype="+" datastorage="storeData" />
+      </Member>
+    </Member>
+  </Dimension>
+
+  <Dimension name="Measures" type="accounts">
+    <Member name="Profit" consoltype="+" datastorage="dynamic" solveOrder="10">
+      <Formula><![CDATA[Margin - "Total Expenses"]]></Formula>
+      <UDA value="Key_Metric" />
+      <Member name="Margin" consoltype="+" datastorage="dynamic">
+        <Formula><![CDATA[Sales - COGS]]></Formula>
+        <Member name="Sales" consoltype="+" datastorage="storeData">
+          <Alias table="Default" value="Gross Sales" />
+          <UDA value="Revenue" />
+        </Member>
+        <Member name="COGS" consoltype="-" datastorage="storeData">
+          <Alias table="Default" value="Cost of Goods Sold" />
+          <UDA value="Expense" />
+        </Member>
+      </Member>
+      <Member name="Total Expenses" consoltype="-" datastorage="dynamic">
+        <Member name="Marketing" consoltype="+" datastorage="storeData">
+          <UDA value="Expense" />
+        </Member>
+        <Member name="Payroll" consoltype="+" datastorage="storeData">
+          <UDA value="Expense" />
+        </Member>
+        <Member name="Misc" consoltype="+" datastorage="storeData">
+          <UDA value="Expense" />
+        </Member>
+      </Member>
+    </Member>
+    <Member name="Inventory" consoltype="~" datastorage="labelOnly">
+      <Member name="Opening Inventory" consoltype="+" datastorage="storeData" />
+      <Member name="Additions" consoltype="+" datastorage="storeData" />
+      <Member name="Ending Inventory" consoltype="-" datastorage="storeData" />
+    </Member>
+    <Member name="Ratios" consoltype="~" datastorage="labelOnly">
+      <Member name="Margin %" consoltype="~" datastorage="dynamic">
+        <Formula><![CDATA[Margin / Sales * 100]]></Formula>
+      </Member>
+      <Member name="Profit %" consoltype="~" datastorage="dynamic">
+        <Formula><![CDATA[Profit / Sales * 100]]></Formula>
+      </Member>
+    </Member>
+  </Dimension>
+
+  <Dimension name="Product" type="standard">
+    <Member name="Product" consoltype="+" datastorage="labelOnly">
+      <Member name="100" consoltype="+" datastorage="storeData">
+        <Alias table="Default" value="Colas" />
+        <UDA value="Major Market" />
+        <Attribute dimension="Caffeinated" value="Caffeinated_True" />
+        <Member name="100-10" consoltype="+" datastorage="storeData">
+          <Alias table="Default" value="Cola" />
+        </Member>
+        <Member name="100-20" consoltype="+" datastorage="storeData">
+          <Alias table="Default" value="Diet Cola" />
+        </Member>
+      </Member>
+      <Member name="200" consoltype="+" datastorage="storeData">
+        <Alias table="Default" value="Root Beer" />
+        <Member name="200-10" consoltype="+" datastorage="storeData">
+          <Alias table="Default" value="Old Fashioned" />
+        </Member>
+      </Member>
+    </Member>
+  </Dimension>
+
+  <Dimension name="Market" type="standard">
+    <Member name="Market" consoltype="+" datastorage="labelOnly">
+      <Member name="East" consoltype="+" datastorage="labelOnly">
+        <Member name="New York" consoltype="+" datastorage="storeData" />
+        <Member name="Massachusetts" consoltype="+" datastorage="storeData" />
+      </Member>
+      <Member name="West" consoltype="+" datastorage="labelOnly">
+        <Member name="California" consoltype="+" datastorage="storeData" />
+        <Member name="Oregon" consoltype="+" datastorage="storeData" />
+      </Member>
+    </Member>
+  </Dimension>
+
+  <Dimension name="Scenario" type="standard">
+    <Member name="Actual" consoltype="+" datastorage="storeData" />
+    <Member name="Budget" consoltype="+" datastorage="storeData" />
+    <Member name="Variance" consoltype="~" datastorage="dynamic" solveOrder="20">
+      <Formula><![CDATA[Actual - Budget]]></Formula>
+    </Member>
+  </Dimension>
+
+  <Dimension name="Caffeinated" type="attribute" isAttributeDimension="true">
+    <Member name="Caffeinated_True" consoltype="+" datastorage="storeData" />
+    <Member name="Caffeinated_False" consoltype="+" datastorage="storeData" />
+  </Dimension>
+
+</application>

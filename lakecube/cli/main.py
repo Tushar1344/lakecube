@@ -9,11 +9,13 @@ from __future__ import annotations
 from pathlib import Path
 
 import click
+import yaml
 from rich.console import Console
 from rich.table import Table
 
 from lakecube import __version__
 from lakecube.compiler.compile import compile_cube, load_spec, write_plan
+from lakecube.importers.outline import import_outline as import_outline_impl
 
 console = Console()
 
@@ -99,10 +101,30 @@ def import_cmd() -> None:
 
 
 @import_cmd.command("outline")
-@click.argument("path", type=click.Path(exists=True))
-def import_outline(path: str) -> None:
-    """Import an Essbase .otl export into cube.yaml. TODO(P0)."""
-    console.print(f"[yellow]import outline[/yellow] — would parse {path}")
+@click.argument("path", type=click.Path(exists=True, dir_okay=False))
+@click.option(
+    "--out",
+    default="cube.yaml",
+    type=click.Path(dir_okay=False),
+    help="Where to write the generated cube.yaml.",
+)
+@click.option("--name", default=None, help="Override the cube name (default: slugified app name).")
+def import_outline(path: str, out: str, name: str | None) -> None:
+    """Import an Essbase outline XML export and write cube.yaml."""
+    result = import_outline_impl(path, cube_name=name)
+    doc = result.cube.model_dump(exclude_none=True, mode="python")
+    Path(out).write_text(yaml.safe_dump(doc, sort_keys=False, default_flow_style=False))
+    console.print(
+        f"[green]OK[/green] wrote {out} — "
+        f"{len(result.cube.dimensions)} dimensions, "
+        f"{len(result.cube.measures)} measures"
+    )
+    if result.warnings:
+        console.print(f"[yellow]{len(result.warnings)} warnings:[/yellow]")
+        for w in result.warnings[:10]:
+            console.print(f"  [yellow]{w.category}[/yellow]: {w.detail}")
+        if len(result.warnings) > 10:
+            console.print(f"  ... and {len(result.warnings) - 10} more")
 
 
 @import_cmd.command("calc")
