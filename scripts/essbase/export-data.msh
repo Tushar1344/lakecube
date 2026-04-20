@@ -1,0 +1,30 @@
+/*
+ * MaxL script: export Sample.Basic cell data.
+ *
+ * Produces a flat column-format file of fact intersections + values,
+ * suitable for feeding into a Lakecube parity test.
+ *
+ * Invoked via:
+ *     docker exec essbase startMaxl.sh \
+ *         /home/oracle/start_scripts/export-data.msh
+ */
+
+login "$EPM_ADMIN" "$EPM_PASSWORD" on "localhost";
+
+shell "mkdir -p /home/oracle/start_scripts/output";
+
+/* Level-0 export — only leaf (input) cells, which is what Lakecube would
+   load into its Delta fact table. Upper-level rollups are recomputed by
+   the compiler's materialized views. */
+export database "sample"."basic" level0 data
+    in columns
+    to data_file "/home/oracle/start_scripts/output/sample-basic-data.txt";
+
+/* All-data export — includes rolled-up + calculated cells. Useful for
+   parity testing: we compare Essbase's own rollup against Lakecube's. */
+export database "sample"."basic" all data
+    in columns
+    to data_file "/home/oracle/start_scripts/output/sample-basic-data.allcells.txt";
+
+logout;
+exit;

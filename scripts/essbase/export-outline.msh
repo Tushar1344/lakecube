@@ -1,0 +1,28 @@
+/*
+ * MaxL script: export Sample.Basic outline as XML.
+ *
+ * Runs inside the docker-essbase container. Output lands in the bind-mounted
+ * start_scripts/output/ directory so the host can pick it up.
+ *
+ * Invoked via:
+ *     docker exec essbase startMaxl.sh \
+ *         /home/oracle/start_scripts/export-outline.msh
+ */
+
+login "$EPM_ADMIN" "$EPM_PASSWORD" on "localhost";
+
+shell "mkdir -p /home/oracle/start_scripts/output";
+
+/* Attribute-rich (default) export — exercises consoltype, datastorage,
+   formulas, aliases, UDAs, and <Attribute> associations. */
+export outline "sample"."basic" all dimensions
+    with alias_table "Default"
+    to xml_file "/home/oracle/start_scripts/output/sample-basic-outline.xml";
+
+/* Tree-mode export — sparse attributes, exercises the
+   <AttributeDimension nameRef> detection path. */
+export outline "sample"."basic" all dimensions tree
+    to xml_file "/home/oracle/start_scripts/output/sample-basic-outline.treemode.xml";
+
+logout;
+exit;
