@@ -23,7 +23,7 @@ params:
 
 dimensions:
   - name: measures
-    type: standard
+    type: measures
     hierarchies:
       - name: default
         default: true

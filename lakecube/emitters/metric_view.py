@@ -37,11 +37,6 @@ _AGG_TO_SQL = {
 }
 
 
-def _is_measures_dim(dim: Dimension) -> bool:
-    """The "measures" dimension is a presentation concept; Cube.measures carries the real list."""
-    return dim.type == "measures" or dim.name.lower() == "measures"
-
-
 def _dim_entry(dim: Dimension, cube: Cube) -> dict:
     key_col = cube.fact.dimension_keys.get(dim.name, dim.name)
     entry: dict = {
@@ -75,7 +70,7 @@ def _measure_entry(m: Measure) -> dict:
 
 
 def emit_metric_view(cube: Cube) -> Artifact:
-    dimensions = [_dim_entry(d, cube) for d in cube.dimensions if not _is_measures_dim(d)]
+    dimensions = [_dim_entry(d, cube) for d in cube.dimensions if not d.is_measures]
     measures = [_measure_entry(m) for m in cube.measures]
 
     doc = {

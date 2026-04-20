@@ -32,11 +32,21 @@ class Hierarchy(_Base):
 
 class Dimension(_Base):
     name: str
-    type: str = "standard"  # standard | attribute | time
+    type: str = "standard"  # standard | attribute | time | measures
     hierarchies: list[Hierarchy] = Field(default_factory=list)
     aliases: dict[str, str] = Field(default_factory=dict)  # alias_table_name -> source column
     time_grain: str | None = None  # for type=time: day|month|quarter|year
     dynamic_time_series: list[str] = Field(default_factory=list)  # e.g. ["YTD", "QTD", "MAT"]
+
+    @property
+    def is_measures(self) -> bool:
+        """True when the dimension is Essbase's 'Measures' presentation construct.
+
+        Lakecube's top-level `measures:` carries the real list; this dimension is
+        kept only so the Workbench + Excel plugin can render a hierarchical
+        measure navigator. Emitters skip it when producing fact-relational output.
+        """
+        return self.type == "measures" or self.name.lower() == "measures"
 
 
 class Measure(_Base):

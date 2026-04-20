@@ -58,7 +58,7 @@ def test_lakeflow_covers_every_non_measures_dim() -> None:
     assert arts and arts[0].kind == "lakeflow"
     body = arts[0].content
     for dim in cube.dimensions:
-        if dim.type == "measures" or dim.name == "measures":
+        if dim.is_measures:
             assert f"dim_{dim.name}" not in body
         else:
             assert f"dim_{dim.name}" in body
@@ -92,7 +92,7 @@ def test_lakebase_schema_covers_every_non_measures_dim() -> None:
     body = arts[0].content
     assert "CREATE SCHEMA" in body
     for dim in cube.dimensions:
-        if dim.type != "measures" and dim.name != "measures":
+        if not dim.is_measures:
             assert f"{dim.name}_key" in body
 
 

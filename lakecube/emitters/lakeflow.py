@@ -27,7 +27,7 @@ def emit_lakeflow(cube: Cube) -> list[Artifact]:
     # One streaming table per dimension (SCD Type 2 scaffold).
     # Real source mapping comes from `rules:` or the outline importer.
     for dim in cube.dimensions:
-        if dim.type == "measures":
+        if dim.is_measures:
             continue
         tables.append(
             {
