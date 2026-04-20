@@ -21,9 +21,9 @@ def emit_lakebase(cube: Cube) -> list[Artifact]:
     if not cube.scenarios:
         return []
     schema = f"lakecube_writeback_{cube.name}"
-    dim_cols = ",\n    ".join(
-        f"{dim.name}_key TEXT NOT NULL" for dim in cube.dimensions if dim.type != "measures"
-    )
+    non_measure_dims = [d for d in cube.dimensions if d.type != "measures"]
+    dim_cols = ",\n    ".join(f"{dim.name}_key TEXT NOT NULL" for dim in non_measure_dims)
+    unique_keys = ", ".join(f"{d.name}_key" for d in non_measure_dims)
     ddl = f"""-- Lakebase write-back schema for cube {cube.name}.
 -- Apply to the Postgres endpoint associated with this cube.
 
@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS {schema}.cells (
     submitted_by TEXT NOT NULL,
     submitted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     status TEXT NOT NULL DEFAULT 'draft',  -- draft | submitted | approved | rejected
-    UNIQUE (scenario, measure{", " + ", ".join(f"{d.name}_key" for d in cube.dimensions if d.type != "measures")})
+    UNIQUE (scenario, measure, {unique_keys})
 );
 
 CREATE TABLE IF NOT EXISTS {schema}.cell_comments (

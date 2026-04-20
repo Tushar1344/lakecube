@@ -41,15 +41,16 @@ def _filter_to_sql(flt: SecurityFilter, cube: Cube) -> str:
     fn_name = f"lakecube_{cube.name}__rf_{flt.name}"
     pred = _predicate_sql(flt.members, flt.dimension)
     principals = flt.principal
+    key_col = cube.fact.dimension_keys.get(flt.dimension, flt.dimension)
     return (
-        f"-- Row filter for security rule: {flt.name}\n"
-        f"-- Grant: {flt.access} to {principals} over descendants of members matching: {flt.members}\n"
+        f"-- Row filter: {flt.name}\n"
+        f"-- Access: {flt.access} for {principals}\n"
+        f"-- Members: {flt.members}\n"
         f"CREATE OR REPLACE FUNCTION {fn_name}({flt.dimension}_key STRING)\n"
         f"RETURNS BOOLEAN\n"
         f"RETURN IS_ACCOUNT_GROUP_MEMBER('{principals}') AND ({pred});\n"
         f"\n"
-        f"ALTER TABLE {cube.fact.table} SET ROW FILTER "
-        f"{fn_name} ON ({cube.fact.dimension_keys.get(flt.dimension, flt.dimension)});\n"
+        f"ALTER TABLE {cube.fact.table} SET ROW FILTER {fn_name} ON ({key_col});\n"
     )
 
 

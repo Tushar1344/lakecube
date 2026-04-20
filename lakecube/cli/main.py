@@ -45,7 +45,7 @@ def compile(spec_path: str, out_dir: str, show: bool) -> None:
     table.add_column("kind")
     table.add_column("path")
     table.add_column("bytes", justify="right")
-    for art, path in zip(plan.artifacts, written):
+    for art, path in zip(plan.artifacts, written, strict=True):
         table.add_row(art.kind, str(path), str(len(art.content)))
     console.print(table)
 
