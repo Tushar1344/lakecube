@@ -1,8 +1,7 @@
 # Lakecube Architecture
 
-The full architecture blueprint (including the Essbase user migration parity matrix)
-lives in [the design note](../docs/blueprint.md) — *to be copied in from the planning
-session that produced this repo*. For now, a short recap so this repo reads standalone.
+The full architecture blueprint, including the Essbase user migration parity matrix,
+lives in [`blueprint.md`](blueprint.md). This file is a short recap.
 
 ## TL;DR
 
