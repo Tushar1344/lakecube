@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Tree-mode export fixture — mimics the sparse output of:
+
+      export outline "Sample.Basic" all dimensions tree
+             to xml_file 'sample.xml';
+
+  In tree mode, Essbase strips member attributes (no consoltype,
+  datastorage, formulas, aliases, UDAs). Attribute dimensions are
+  declared at the application level as plain <Dimension> without
+  type="attribute", and are linked via <AttributeDimension nameRef>
+  elements inside the base dimension. Shared members appear by name
+  under alternate parents.
+
+  Structurally modeled on Oracle's real output (as observed in
+  jasonwjones/essbase-outline-export-parser's test resource). Values
+  below are handwritten — no redistribution.
+-->
+<application name="Sample" csversion="4.0" product="ESSBASE_PRODUCT"
+             redeployType="tree" dimCount="8">
+
+  <Dimension name="Year">
+    <Generations>
+      <GenLevel number="1" name="History" />
+      <GenLevel number="2" name="Quarter" />
+      <GenLevel number="3" name="Months" />
+    </Generations>
+    <Member name="Qtr1">
+      <Member name="Jan" />
+      <Member name="Feb" />
+      <Member name="Mar" />
+    </Member>
+    <Member name="Qtr2">
+      <Member name="Apr" />
+      <Member name="May" />
+      <Member name="Jun" />
+    </Member>
+  </Dimension>
+
+  <Dimension name="Measures">
+    <Member name="Profit">
+      <Member name="Margin">
+        <Member name="Sales" />
+        <Member name="COGS" />
+      </Member>
+      <Member name="Total Expenses">
+        <Member name="Marketing" />
+        <Member name="Payroll" />
+      </Member>
+    </Member>
+    <Member name="Inventory">
+      <Member name="Opening Inventory" />
+      <Member name="Ending Inventory" />
+    </Member>
+  </Dimension>
+
+  <Dimension name="Product">
+    <AttributeDimension nameRef="Caffeinated" name="Caffeinated" />
+    <AttributeDimension nameRef="Ounces" name="Ounces" />
+    <Generations>
+      <GenLevel number="2" name="Category" />
+      <GenLevel number="3" name="Product SKU" />
+    </Generations>
+    <Levels>
+      <GenLevel number="0" name="SKU" />
+      <GenLevel number="1" name="Family" />
+    </Levels>
+    <Member name="100">
+      <Member name="100-10" />
+      <Member name="100-20" />
+    </Member>
+    <Member name="200">
+      <Member name="200-10" />
+      <Member name="200-20" />
+    </Member>
+    <!-- Shared-member pattern: "Diet" reuses 100-20 and 200-20 under a different parent. -->
+    <Member name="Diet">
+      <Member name="100-20" />
+      <Member name="200-20" />
+    </Member>
+  </Dimension>
+
+  <Dimension name="Market">
+    <AttributeDimension nameRef="Population" name="Population" />
+    <Generations>
+      <GenLevel number="2" name="Region" />
+      <GenLevel number="3" name="State" />
+    </Generations>
+    <Member name="East">
+      <Member name="New York" />
+      <Member name="Massachusetts" />
+    </Member>
+    <Member name="West">
+      <Member name="California" />
+      <Member name="Oregon" />
+    </Member>
+  </Dimension>
+
+  <Dimension name="Scenario">
+    <Member name="Actual" />
+    <Member name="Budget" />
+    <Member name="Variance" />
+  </Dimension>
+
+  <!-- Attribute dimensions appear at app level as plain <Dimension> — no type attr. -->
+  <Dimension name="Caffeinated">
+    <Member name="Caffeinated_True" />
+    <Member name="Caffeinated_False" />
+  </Dimension>
+
+  <Dimension name="Ounces">
+    <Member name="12" />
+    <Member name="16" />
+    <Member name="20" />
+  </Dimension>
+
+  <Dimension name="Population">
+    <Member name="Small" />
+    <Member name="Medium" />
+    <Member name="Large" />
+  </Dimension>
+
+  <cube>
+    <aliasTables>
+      <aliasTable>Default</aliasTable>
+      <aliasTable>Long Names</aliasTable>
+    </aliasTables>
+    <dynamicTimeSeriesSettings>
+      <Q-T-D enabled="Y" generation="2" />
+      <Y-T-D enabled="Y" generation="1" />
+    </dynamicTimeSeriesSettings>
+    <attributeSettings>
+      <prefixSuffixValue>Prefix</prefixSuffixValue>
+      <prefixSuffixFormat>Parent</prefixSuffixFormat>
+    </attributeSettings>
+  </cube>
+  <smartLists />
+
+</application>

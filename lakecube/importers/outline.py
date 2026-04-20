@@ -162,7 +162,15 @@ def _parse_dimension(
     dim_el: ET.Element,
     warnings: list[ImportWarning],
     default_alias_table: str | None,
+    attribute_dim_refs: set[str] | None = None,
 ) -> Dimension:
+    """Parse a <Dimension> element.
+
+    `attribute_dim_refs` is the set of dimension names referenced by
+    <AttributeDimension nameRef="..."/> elements elsewhere in the outline.
+    In tree-mode exports Essbase omits `type="attribute"` on the dimension
+    itself but still links it in via nameRef, so we re-type by reference.
+    """
     name = dim_el.get("name") or "unnamed"
     essbase_type = (dim_el.get("type") or "standard").lower()
     lc_type = _DIM_TYPE_MAP.get(essbase_type, "standard")
@@ -174,6 +182,15 @@ def _parse_dimension(
                 "mapped to 'standard'.",
             )
         )
+
+    # Tree-mode tell: no type attribute, but the name matches a nameRef elsewhere.
+    if attribute_dim_refs and name in attribute_dim_refs and lc_type == "standard":
+        lc_type = "attribute"
+
+    # Heuristic time detection — explicit type="time" OR isTimeGeneration="true".
+    is_time_gen = (dim_el.get("isTimeGeneration") or "").lower() == "true"
+    if is_time_gen and lc_type == "standard":
+        lc_type = "time"
 
     # Time grain heuristic: if time dimension, infer from member names
     time_grain = None
@@ -194,6 +211,21 @@ def _parse_dimension(
         hierarchies=[hierarchy],
         time_grain=time_grain,
     )
+
+
+def _collect_attribute_dim_refs(root: ET.Element) -> set[str]:
+    """Gather the set of dimension names referenced as attribute dimensions.
+
+    Essbase tree-mode exports declare attribute dimensions at the application
+    level as plain <Dimension> but link them via <AttributeDimension nameRef>
+    elements inside the base (linking) dimension.
+    """
+    refs: set[str] = set()
+    for attr_el in root.findall(".//AttributeDimension"):
+        ref = attr_el.get("nameRef") or attr_el.get("name")
+        if ref:
+            refs.add(ref)
+    return refs
 
 
 def _flatten_leaves(member: Member) -> list[Member]:
@@ -271,9 +303,10 @@ def import_outline(
 
     warnings: list[ImportWarning] = []
     default_alias = _active_alias_table(root)
+    attr_refs = _collect_attribute_dim_refs(root)
 
     dimensions = [
-        _parse_dimension(d, warnings, default_alias)
+        _parse_dimension(d, warnings, default_alias, attribute_dim_refs=attr_refs)
         for d in root.findall("Dimension")
     ]
 
