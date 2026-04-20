@@ -1,0 +1,186 @@
+# Sample.Basic — Essbase's canonical demo cube, re-expressed as a Lakecube spec.
+#
+# This file is the parity target for P0: `lakecube compile examples/sample_basic/cube.yaml`
+# should produce a valid EmissionPlan. P1 fills in the ad-hoc gestures that make
+# this cube usable in AI/BI + Workbench.
+
+name: sample_basic
+version: "1"
+description: "Essbase's canonical Sample.Basic cube — cola sales by product, market, scenario, and time."
+
+fact:
+  table: main.lakecube_examples.sample_basic_facts
+  dimension_keys:
+    product: product_code
+    market: market_code
+    scenario: scenario_code
+    year: period_code
+    measures: measure_code
+
+params:
+  curr_year: "2026"
+  curr_month: "Jan"
+
+dimensions:
+  - name: measures
+    type: standard
+    hierarchies:
+      - name: default
+        default: true
+        members:
+          - name: Profit
+            consolidation: "+"
+            children:
+              - name: Margin
+                consolidation: "+"
+                children:
+                  - { name: Sales,   consolidation: "+" }
+                  - { name: COGS,    consolidation: "-" }
+              - name: "Total Expenses"
+                consolidation: "-"
+                children:
+                  - { name: Marketing, consolidation: "+" }
+                  - { name: Payroll,   consolidation: "+" }
+                  - { name: Misc,      consolidation: "+" }
+          - name: Inventory
+            consolidation: "~"
+            children:
+              - { name: "Opening Inventory", consolidation: "+" }
+              - { name: Additions,           consolidation: "+" }
+              - { name: "Ending Inventory",  consolidation: "-" }
+          - name: Ratios
+            consolidation: "~"
+            children:
+              - name: "Margin %"
+                storage: dynamic
+                formula: "Margin / Sales * 100"
+              - name: "Profit %"
+                storage: dynamic
+                formula: "Profit / Sales * 100"
+              - name: "Profit per Ounce"
+                storage: dynamic
+                formula: "Profit / Ounces"
+
+  - name: year
+    type: time
+    time_grain: month
+    dynamic_time_series: [YTD, QTD]
+    hierarchies:
+      - name: default
+        default: true
+        members:
+          - name: Year
+            children:
+              - name: Qtr1
+                children: [{name: Jan}, {name: Feb}, {name: Mar}]
+              - name: Qtr2
+                children: [{name: Apr}, {name: May}, {name: Jun}]
+              - name: Qtr3
+                children: [{name: Jul}, {name: Aug}, {name: Sep}]
+              - name: Qtr4
+                children: [{name: Oct}, {name: Nov}, {name: Dec}]
+
+  - name: product
+    type: standard
+    hierarchies:
+      - name: default
+        default: true
+        members:
+          - name: Product
+            children:
+              - name: "100"
+                alias: Colas
+                children:
+                  - { name: "100-10", alias: "Cola" }
+                  - { name: "100-20", alias: "Diet Cola" }
+                  - { name: "100-30", alias: "Caffeine Free Cola" }
+              - name: "200"
+                alias: "Root Beer"
+                children:
+                  - { name: "200-10", alias: "Old Fashioned" }
+                  - { name: "200-20", alias: "Diet Root Beer" }
+                  - { name: "200-30", alias: "Sasparilla" }
+                  - { name: "200-40", alias: "Birch Beer" }
+              - name: "300"
+                alias: "Cream Soda"
+                children:
+                  - { name: "300-10", alias: "Dark Cream" }
+                  - { name: "300-20", alias: "Vanilla Cream" }
+                  - { name: "300-30", alias: "Diet Cream" }
+              - name: "400"
+                alias: "Fruit Soda"
+                children:
+                  - { name: "400-10", alias: "Grape" }
+                  - { name: "400-20", alias: "Orange" }
+                  - { name: "400-30", alias: "Strawberry" }
+
+  - name: market
+    type: standard
+    hierarchies:
+      - name: default
+        default: true
+        members:
+          - name: Market
+            children:
+              - name: East
+                children:
+                  - { name: "New York" }
+                  - { name: "Massachusetts" }
+                  - { name: "Florida" }
+                  - { name: "Connecticut" }
+                  - { name: "New Hampshire" }
+              - name: West
+                children:
+                  - { name: "California" }
+                  - { name: "Oregon" }
+                  - { name: "Washington" }
+                  - { name: "Utah" }
+                  - { name: "Nevada" }
+              - name: South
+                children:
+                  - { name: "Texas" }
+                  - { name: "Oklahoma" }
+                  - { name: "Louisiana" }
+                  - { name: "New Mexico" }
+              - name: Central
+                children:
+                  - { name: "Illinois" }
+                  - { name: "Ohio" }
+                  - { name: "Wisconsin" }
+                  - { name: "Missouri" }
+                  - { name: "Iowa" }
+                  - { name: "Colorado" }
+
+  - name: scenario
+    type: standard
+    hierarchies:
+      - name: default
+        default: true
+        members:
+          - { name: Actual,     consolidation: "+" }
+          - { name: Budget,     consolidation: "+" }
+          - name: Variance
+            storage: dynamic
+            formula: "Actual - Budget"
+          - name: "Variance %"
+            storage: dynamic
+            formula: "(Actual - Budget) / Budget * 100"
+
+measures:
+  - { name: Sales,    aggregation: sum, source: sales_amt }
+  - { name: COGS,     aggregation: sum, source: cogs_amt }
+  - { name: Margin,   aggregation: formula, formula: "Sales - COGS" }
+  - { name: Profit,   aggregation: formula, formula: "Margin - Total Expenses" }
+
+scenarios:
+  - name: "budget-fy26"
+    fork_from: main
+    approvers: ["finance-controllers"]
+    writable: true
+
+security:
+  - name: east_region_analysts
+    principal: group:east-analysts
+    dimension: market
+    members: "descendants(East)"
+    access: read
