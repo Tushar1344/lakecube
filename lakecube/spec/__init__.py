@@ -9,6 +9,24 @@ The spec is intentionally a superset of the Open Semantic Interchange (OSI) YAML
 format so that Lakecube cubes remain portable across OSI-compliant tools.
 """
 
-from lakecube.spec.schema import Cube, Dimension, Hierarchy, Measure, Scenario
+from lakecube.spec.schema import (
+    Cube,
+    Dimension,
+    Fact,
+    Hierarchy,
+    Measure,
+    Member,
+    Scenario,
+    SecurityFilter,
+)
 
-__all__ = ["Cube", "Dimension", "Hierarchy", "Measure", "Scenario"]
+__all__ = [
+    "Cube",
+    "Dimension",
+    "Fact",
+    "Hierarchy",
+    "Measure",
+    "Member",
+    "Scenario",
+    "SecurityFilter",
+]
