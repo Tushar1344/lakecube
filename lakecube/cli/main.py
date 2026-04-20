@@ -1,19 +1,19 @@
 """`lakecube` CLI entry point.
 
-Subcommands map to the verbs an Essbase admin recognizes (compile/deploy/
-scenario/calc) plus the migration tooling (import outline/calc/rules/maxl).
-
-All scaffolding — real behavior lands phase by phase.
+Subcommands map to verbs an Essbase admin recognizes (compile/deploy/scenario/
+calc) plus migration tooling (import outline/calc/rules/maxl).
 """
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import click
 from rich.console import Console
+from rich.table import Table
 
 from lakecube import __version__
-from lakecube.compiler import compile_cube
-from lakecube.compiler.compile import load_spec
+from lakecube.compiler.compile import compile_cube, load_spec, write_plan
 
 console = Console()
 
@@ -26,20 +26,33 @@ def cli() -> None:
 
 @cli.command()
 @click.argument("spec_path", type=click.Path(exists=True, dir_okay=False), default="cube.yaml")
-def compile(spec_path: str) -> None:
-    """Validate a spec and preview what would be deployed."""
+@click.option(
+    "--out",
+    "out_dir",
+    type=click.Path(file_okay=False),
+    default="build",
+    help="Directory to write emitted artifacts into.",
+)
+@click.option("--show", is_flag=True, help="Print each artifact's content after writing.")
+def compile(spec_path: str, out_dir: str, show: bool) -> None:
+    """Validate a spec and emit deployable artifacts into `out/`."""
     cube = load_spec(spec_path)
     plan = compile_cube(cube)
-    console.print(f"[green]OK[/green] {cube.name} v{cube.version}")
-    for label, items in [
-        ("metric_views", plan.metric_views),
-        ("lakeflow_pipelines", plan.lakeflow_pipelines),
-        ("abac_policies", plan.abac_policies),
-        ("delta_branches", plan.delta_branches),
-        ("lakebase_schemas", plan.lakebase_schemas),
-    ]:
-        if items:
-            console.print(f"  [cyan]{label}[/cyan]: {', '.join(items)}")
+    written = write_plan(plan, Path(out_dir) / cube.name)
+
+    console.print(f"[green]OK[/green] {cube.name} v{cube.version} — {len(written)} artifacts")
+    table = Table(show_header=True, header_style="bold")
+    table.add_column("kind")
+    table.add_column("path")
+    table.add_column("bytes", justify="right")
+    for art, path in zip(plan.artifacts, written):
+        table.add_row(art.kind, str(path), str(len(art.content)))
+    console.print(table)
+
+    if show:
+        for art in plan.artifacts:
+            console.rule(f"[cyan]{art.path}[/cyan]")
+            console.print(art.content)
 
 
 @cli.command()
@@ -47,10 +60,8 @@ def compile(spec_path: str) -> None:
 @click.option("--catalog", required=True, help="Target UC catalog.")
 @click.option("--schema", default="lakecube", help="Target UC schema.")
 def deploy(spec_path: str, catalog: str, schema: str) -> None:
-    """Compile and apply the emission plan to Databricks.
-
-    TODO(P0): dispatch via databricks-sdk.
-    """
+    """Compile and apply the emission plan to Databricks. TODO(P0): SDK apply."""
+    _ = load_spec(spec_path)
     console.print(f"[yellow]deploy not implemented yet[/yellow] — target {catalog}.{schema}")
 
 
@@ -58,6 +69,7 @@ def deploy(spec_path: str, catalog: str, schema: str) -> None:
 @click.argument("spec_path", type=click.Path(exists=True, dir_okay=False), default="cube.yaml")
 def diff_cmd(spec_path: str) -> None:
     """Show what a deploy would change. TODO(P0)."""
+    _ = load_spec(spec_path)
     console.print("[yellow]diff not implemented yet[/yellow]")
 
 
