@@ -267,7 +267,7 @@ def import_outline(
             "expected <application> from Essbase export"
         )
     app_name = root.get("name") or "imported_cube"
-    name = cube_name or _slugify(app_name)
+    name = _slugify(cube_name) if cube_name else _slugify(app_name)
 
     warnings: list[ImportWarning] = []
     default_alias = _active_alias_table(root)
