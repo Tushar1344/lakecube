@@ -14,6 +14,7 @@ import yaml
 
 from lakecube.emitters import (
     Artifact,
+    emit_closure,
     emit_lakebase,
     emit_lakeflow,
     emit_metric_view,
@@ -48,6 +49,8 @@ def compile_cube(cube: Cube) -> EmissionPlan:
     plan = EmissionPlan()
     plan.artifacts.append(emit_metric_view(cube))
     plan.artifacts.extend(emit_lakeflow(cube))
+    # Closure must be emitted before security — security predicates query it.
+    plan.artifacts.extend(emit_closure(cube))
     plan.artifacts.extend(emit_security(cube))
     plan.artifacts.extend(emit_scenarios(cube))
     plan.artifacts.extend(emit_lakebase(cube))

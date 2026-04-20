@@ -9,6 +9,7 @@ inspection, diff-ability, and version control come free.
 """
 
 from lakecube.emitters.base import Artifact
+from lakecube.emitters.closure import emit_closure
 from lakecube.emitters.lakebase import emit_lakebase
 from lakecube.emitters.lakeflow import emit_lakeflow
 from lakecube.emitters.metric_view import emit_metric_view
@@ -19,6 +20,7 @@ __all__ = [
     "Artifact",
     "emit_metric_view",
     "emit_lakeflow",
+    "emit_closure",
     "emit_security",
     "emit_scenarios",
     "emit_lakebase",

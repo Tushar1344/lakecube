@@ -10,6 +10,7 @@ import lakecube
 from lakecube.cli.main import cli
 from lakecube.compiler.compile import compile_cube, load_spec, write_plan
 from lakecube.emitters import (
+    emit_closure,
     emit_lakebase,
     emit_lakeflow,
     emit_metric_view,
@@ -73,6 +74,47 @@ def test_security_emits_row_filter_per_rule() -> None:
     for flt in cube.security:
         assert flt.name in body
     assert "SET ROW FILTER" in body
+    # Predicates now reference the closure table via lakecube.fn.
+    assert "lakecube.closure" in body
+
+
+def test_closure_emitter_produces_rows_for_every_non_measures_dim() -> None:
+    cube = load_spec(SAMPLE_BASIC)
+    arts = emit_closure(cube)
+    assert len(arts) == 1
+    body = arts[0].content
+    assert "CREATE TABLE IF NOT EXISTS lakecube.closure" in body
+    assert "INSERT INTO lakecube.closure" in body
+    for dim in cube.dimensions:
+        if dim.is_measures:
+            assert f"'{dim.name}'," not in body.split("INSERT INTO")[1]
+        else:
+            assert f"'{dim.name}'," in body
+
+
+def test_closure_emitter_reflexive_rows() -> None:
+    """Every member should get a depth=0 row."""
+    cube = load_spec(SAMPLE_BASIC)
+    body = emit_closure(cube)[0].content
+    # Spot-check a couple of members present in Sample.Basic's market dim.
+    assert "('market', 'East', 'East', 0)" in body
+    assert "('market', 'New York', 'New York', 0)" in body
+
+
+def test_closure_emitter_transitive_pairs() -> None:
+    """Grandparent→grandchild pair at depth=2 should appear."""
+    cube = load_spec(SAMPLE_BASIC)
+    body = emit_closure(cube)[0].content
+    # Market → East → New York makes Market a depth=2 ancestor of New York.
+    assert "('market', 'Market', 'New York', 2)" in body
+
+
+def test_closure_emitter_deduplicates() -> None:
+    cube = load_spec(SAMPLE_BASIC)
+    body = emit_closure(cube)[0].content
+    rows_block = body.split("VALUES\n", 1)[1].rstrip(";\n")
+    rows = [r.strip().rstrip(",") for r in rows_block.splitlines()]
+    assert len(rows) == len(set(rows))
 
 
 def test_scenarios_emits_delta_branches() -> None:
@@ -109,6 +151,7 @@ def test_cli_compile_writes_artifacts_to_build_dir(tmp_path: Path) -> None:
     assert (out / "sample_basic" / "security" / "sample_basic_row_filters.sql").exists()
     assert (out / "sample_basic" / "scenarios" / "sample_basic_branches.sql").exists()
     assert (out / "sample_basic" / "lakebase" / "sample_basic_writeback.sql").exists()
+    assert (out / "sample_basic" / "closure" / "sample_basic_closure.sql").exists()
 
 
 def test_write_plan_returns_all_paths(tmp_path: Path) -> None:
